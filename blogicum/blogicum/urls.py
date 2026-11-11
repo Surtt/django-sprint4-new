@@ -20,6 +20,8 @@ from django.contrib import admin
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import include, path, reverse_lazy
 from django.views.generic import CreateView
+from debug_toolbar.toolbar import debug_toolbar_urls
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,7 +38,10 @@ urlpatterns = [
     path('auth/', include('django.contrib.auth.urls')),
 ]
 
-if settings.DEBUG:
-    import debug_toolbar
+urlpatterns += debug_toolbar_urls()
 
-    urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

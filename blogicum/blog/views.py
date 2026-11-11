@@ -2,11 +2,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.views.generic import DetailView, UpdateView
+from django.views.generic import CreateView, DetailView, UpdateView
 
 from blog.models import Category, Post
 
-from .forms import ProfileForm
+from .forms import PostForm, ProfileForm
 
 POSTS_PER_PAGE = 5
 
@@ -38,6 +38,19 @@ def category_posts(request, category_slug):
         'post_list': post_list,
     }
     return render(request, 'blog/category.html', context)
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('blog:profile', args=[self.request.user.username])
 
 
 class ProfileDetailView(DetailView):
