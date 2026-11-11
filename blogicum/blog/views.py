@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, UpdateView
 
@@ -40,6 +40,17 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', context)
 
 
+class OnlyAuthorMixin(UserPassesTestMixin):
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
+
+        def handle_no_permission(self):
+            return redirect(
+                reverse('blog:post_detail', args=[self.kwargs['pk']])
+            )
+
+
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
@@ -51,6 +62,15 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse('blog:profile', args=[self.request.user.username])
+
+
+class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', args=[self.object.id])
 
 
 class ProfileDetailView(DetailView):
