@@ -15,13 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from debug_toolbar.toolbar import debug_toolbar_urls
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import include, path, reverse_lazy
 from django.views.generic import CreateView
-from debug_toolbar.toolbar import debug_toolbar_urls
-from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,6 +32,7 @@ urlpatterns = [
             form_class=UserCreationForm,
             success_url=reverse_lazy('login'),
         ),
+        name='registration',
     ),
     path('', include('blog.urls')),
     path('pages/', include('pages.urls')),

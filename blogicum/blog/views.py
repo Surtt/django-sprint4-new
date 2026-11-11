@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.generic import CreateView, DetailView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from blog.models import Category, Post
 
@@ -71,6 +71,14 @@ class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('blog:post_detail', args=[self.object.id])
+
+
+class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse('blog:profile', args=[self.request.user.username])
 
 
 class ProfileDetailView(DetailView):
