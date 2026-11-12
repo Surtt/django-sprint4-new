@@ -1,55 +1,121 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template import context
 from django.urls import reverse
-from django.views.generic import DetailView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    ListView,
+    UpdateView,
+)
 
 from blog.models import Category, Post
 
-from .forms import ProfileForm
+from .forms import PostForm, ProfileForm
 
-POSTS_PER_PAGE = 5
+POSTS_BY_PAGE = 10
 
 User = get_user_model()
 
 
-def index(request):
-    post_list = Post.objects.with_related().published()[:POSTS_PER_PAGE]
-    context = {'title': 'Лента записей', 'post_list': post_list}
-    return render(request, 'blog/index.html', context)
+class HomePage(ListView):
+    template_name = 'blog/index.html'
+    paginate_by = POSTS_BY_PAGE
+
+    def get_queryset(self):
+        return Post.objects.with_related().published()
 
 
 def post_detail(request, post_id):
     post = get_object_or_404(
-        Post.objects.with_related().published(),
+        Post.objects.with_related(),
         pk=post_id,
     )
+
+    if post.author != request.user:
+        post = get_object_or_404(
+            Post.objects.with_related().published(),
+            pk=post_id,
+        )
     context = {'post': post}
     return render(request, 'blog/detail.html', context)
 
 
-def category_posts(request, category_slug):
-    category = get_object_or_404(
-        Category, slug=category_slug, is_published=True
-    )
-    post_list = category.posts.with_related().published()
-    context = {
-        'category': category,
-        'post_list': post_list,
-    }
-    return render(request, 'blog/category.html', context)
+class CategoryPostsView(ListView):
+    template_name = 'blog/category.html'
+    paginate_by = POSTS_BY_PAGE
+
+    def get_queryset(self):
+        self.category = get_object_or_404(
+            Category, slug=self.kwargs['category_slug'], is_published=True
+        )
+        return self.category.posts.with_related().published()
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context['category'] = self.category
+        return context
 
 
-class ProfileDetailView(DetailView):
-    model = User
+class OnlyAuthorMixin(UserPassesTestMixin):
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
+
+        def handle_no_permission(self):
+            return redirect(
+                reverse('blog:post_detail', args=[self.kwargs['pk']])
+            )
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('blog:profile', args=[self.request.user.username])
+
+
+class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', args=[self.object.id])
+
+
+class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        return reverse('blog:profile', args=[self.request.user.username])
+
+
+class ProfileDetailView(ListView):
+    model = Post
     template_name = 'blog/profile.html'
-    slug_field = 'username'
-    slug_url_kwarg = 'username'
-    context_object_name = 'profile'
+    paginate_by = POSTS_BY_PAGE
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['page_obj'] = Post.objects.filter(author=self.object)
+    def get_queryset(self):
+        self.author = get_object_or_404(User, username=self.kwargs['username'])
+        posts = Post.objects.filter(author=self.author)
+
+        if self.request.user != self.author:
+            posts = posts.published()
+
+        return posts.order_by('-pub_date')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context['profile'] = self.author
         return context
 
 
