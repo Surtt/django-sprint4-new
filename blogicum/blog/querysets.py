@@ -12,3 +12,8 @@ class PostQuerySet(models.QuerySet):
             is_published=True,
             category__is_published=True,
         )
+
+    def with_comment_count(self):
+        return self.annotate(comment_count=models.Count('comments')).order_by(
+            '-pub_date'
+        )
