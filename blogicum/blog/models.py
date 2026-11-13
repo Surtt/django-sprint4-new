@@ -68,7 +68,7 @@ class Post(PublishedModel, TitleModel):
 
     class Meta:
         default_related_name = 'posts'
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
 

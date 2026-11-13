@@ -20,7 +20,7 @@ class PublishedModel(models.Model):
 
 
 class TitleModel(models.Model):
-    """Абстрактная модель. Добавляет поле title"""
+    """Абстрактная модель. Добавляет поле title."""
 
     title = models.CharField(
         max_length=MAX_TITLE_LENGTH, verbose_name='Заголовок'
