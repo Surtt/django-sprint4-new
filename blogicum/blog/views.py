@@ -22,11 +22,9 @@ class OnlyAuthorMixin(UserPassesTestMixin):
         post = self.get_object()
         return post.author == self.request.user
 
-        def handle_no_permission(self):
-            if not self.request.user.is_authenticated:
-                return super().handle_no_permission()
-            post_id = self.kwargs.get('post_id', self.kwargs.get('pk'))
-            return redirect(reverse('blog:post_detail', args=[post_id]))
+    def handle_no_permission(self):
+        post_id = self.kwargs.get('post_id', self.kwargs.get('pk'))
+        return redirect(reverse('blog:post_detail', args=[post_id]))
 
 
 class CommentMixin:
