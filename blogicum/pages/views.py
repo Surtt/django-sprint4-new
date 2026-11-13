@@ -12,7 +12,7 @@ class RulesPage(TemplateView):
     extra_context = {'title': 'Наши правила'}
 
 
-def csrf_failure(request, reason=''):
+def csrf_failure(request, reason='', exception=None):
     return render(request, 'pages/403csrf.html', status=403)
 
 
