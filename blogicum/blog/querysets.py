@@ -3,6 +3,8 @@ from django.utils import timezone
 
 
 class PostQuerySet(models.QuerySet):
+    """QuerySet для публикаций с готовыми цепочками фильтров."""
+
     def with_related(self):
         return self.select_related('category', 'author', 'location')
 
