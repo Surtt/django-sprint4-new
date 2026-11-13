@@ -39,6 +39,10 @@ urlpatterns = [
     path('auth/', include('django.contrib.auth.urls')),
 ]
 
+handler403 = 'pages.views.csrf_failure'
+handler404 = 'pages.views.page_not_found'
+handler500 = 'pages.views.server_error'
+
 urlpatterns += debug_toolbar_urls()
 
 if settings.DEBUG:
